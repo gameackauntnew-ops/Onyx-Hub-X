@@ -40,7 +40,8 @@ LocalPlayer.Idled:Connect(function()
     end)
 end)
 
--- ==================== НАСТРОЙКИ (ФЛАГИ) ====================local Settings = {
+-- ==================== НАСТРОЙКИ (ФЛАГИ) ====================
+local Settings = {
     TurboReps = false, TurboPunch = false, Rebirth = false,
     TurboSpeed = 50,
     SmartMachine = false, SelectedMachine = "Bench Press",
