@@ -5,9 +5,9 @@ local Window = Rayfield:CreateWindow({
     LoadingTitle = "Загрузка Onyx Hub...",
     LoadingSubtitle = "by herosinch",
     ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "OnyxHub_herosinch",
-        FileName = "MuscleLegends_Save"
+        Enabled = false, -- СТРОГО FALSE ДЛЯ ПЛАНШЕТОВ (чтобы Delta не зависала)
+        FolderName = "OnyxHub",
+        FileName = "MuscleLegends"
     },
     Discord = {
         Enabled = false,
@@ -19,7 +19,7 @@ local Window = Rayfield:CreateWindow({
 
 Rayfield:Notify({
     Title = "Onyx Hub загружен!",
-    Content = "Добро пожаловать. Автор скрипта: herosinch",
+    Content = "Оптимизировано для Delta (Mobile)",
     Duration = 5,
     Image = 4483362458,
 })
@@ -31,8 +31,16 @@ local VirtualUser = game:GetService("VirtualUser")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 
--- ==================== НАСТРОЙКИ (ФЛАГИ) ====================
-local Settings = {
+-- Anti-AFK (Безопасный режим для планшета через pcall)
+LocalPlayer.Idled:Connect(function()
+    pcall(function()
+        VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    end)
+end)
+
+-- ==================== НАСТРОЙКИ (ФЛАГИ) ====================local Settings = {
     TurboReps = false, TurboPunch = false, Rebirth = false,
     TurboSpeed = 50,
     SmartMachine = false, SelectedMachine = "Bench Press",
