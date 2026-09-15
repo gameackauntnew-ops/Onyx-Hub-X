@@ -1,27 +1,17 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexsoftware/Orion/main/source')))()
 
-local Window = Rayfield:CreateWindow({
+local Window = OrionLib:MakeWindow({
     Name = "Onyx Hub | Muscle Legends",
-    LoadingTitle = "Загрузка Onyx Hub...",
-    LoadingSubtitle = "by herosinch",
-    ConfigurationSaving = {
-        Enabled = false, -- СТРОГО FALSE ДЛЯ ПЛАНШЕТОВ (чтобы Delta не зависала)
-        FolderName = "OnyxHub",
-        FileName = "MuscleLegends"
-    },
-    Discord = {
-        Enabled = false,
-        Invite = "noinvitelink",
-        RememberJoins = true 
-    },
-    KeySystem = false
+    HidePremium = false,
+    SaveConfig = false, -- Отключено для безопасности на мобилках
+    IntroText = "Onyx Hub by herosinch"
 })
 
-Rayfield:Notify({
-    Title = "Onyx Hub загружен!",
-    Content = "Оптимизировано для Delta (Mobile)",
-    Duration = 5,
-    Image = 4483362458,
+OrionLib:MakeNotification({
+    Name = "Onyx Hub загружен!",
+    Content = "Оптимизировано для Delta. Автор: herosinch",
+    Image = "rbxassetid://4483362458",
+    Time = 5
 })
 
 -- ==================== СЕРВИСЫ ====================
@@ -30,15 +20,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local VirtualUser = game:GetService("VirtualUser")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
-
--- Anti-AFK (Безопасный режим для планшета через pcall)
-LocalPlayer.Idled:Connect(function()
-    pcall(function()
-        VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
-        task.wait(1)
-        VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
-    end)
-end)
 
 -- ==================== НАСТРОЙКИ (ФЛАГИ) ====================
 local Settings = {
@@ -51,14 +32,16 @@ local Settings = {
     WalkSpeed = 16, JumpPower = 50
 }
 
--- Anti-AFK (Защита от отключения)
+-- Anti-AFK (Защита от отключения для мобилок)
 LocalPlayer.Idled:Connect(function()
-    VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
-    task.wait(1)
-    VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    pcall(function()
+        VirtualUser:Button2Down(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+        task.wait(1)
+        VirtualUser:Button2Up(Vector2.new(0, 0), workspace.CurrentCamera.CFrame)
+    end)
 end)
 
--- Базы данных игры (Координаты из Rock Hub)
+-- Базы данных игры
 local Teleports = {
     ["Starter Island"] = Vector3.new(2, 8, 115),
     ["Tiny Island"] = Vector3.new(-34, 7, 1903),
@@ -85,10 +68,9 @@ local MachinesList = {
 local function getTool(toolName)
     local char = LocalPlayer.Character
     if not char then return nil end
-    -- Ищем во всех возможных местах (гантели, отжимания, пресс)
     local tool = char:FindFirstChild(toolName) or LocalPlayer.Backpack:FindFirstChild(toolName)
     if tool and tool.Parent == LocalPlayer.Backpack then
-        char.Humanoid:EquipTool(tool)
+        pcall(function() char.Humanoid:EquipTool(tool) end)
     end
     return tool
 end
@@ -97,9 +79,7 @@ local function getFreeMachine(machineName)
     for _, v in pairs(workspace:GetDescendants()) do
         if v:IsA("Model") and string.find(v.Name, machineName) then
             local seat = v:FindFirstChild("interactSeat") or v:FindFirstChildWhichIsA("Seat", true) or v:FindFirstChildWhichIsA("VehicleSeat", true)
-            if seat and not seat.Occupant then
-                return seat
-            end
+            if seat and not seat.Occupant then return seat end
         end
     end
     return nil
@@ -113,59 +93,45 @@ local function breakMachineWelds(seat)
     if humanoid then
         humanoid.Sit = false
         humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-        for _, anim in pairs(humanoid:GetPlayingAnimationTracks()) do
-            anim:Stop()
-        end
+        for _, anim in pairs(humanoid:GetPlayingAnimationTracks()) do anim:Stop() end
     end
     
     for _, obj in pairs(char:GetDescendants()) do
-        if obj:IsA("Weld") or obj:IsA("WeldConstraint") then
-            pcall(function() obj:Destroy() end)
-        end
+        if obj:IsA("Weld") or obj:IsA("WeldConstraint") then pcall(function() obj:Destroy() end) end
     end
     
     if seat then
         for _, obj in pairs(seat:GetChildren()) do
-            if obj.Name == "SeatWeld" then
-                pcall(function() obj:Destroy() end)
-            end
+            if obj.Name == "SeatWeld" then pcall(function() obj:Destroy() end) end
         end
     end
 end
 
 -- ==================== СОЗДАНИЕ ВКЛАДОК ====================
-local FarmTab = Window:CreateTab("Авто-Фарм", 4483362458)
-local MachineTab = Window:CreateTab("Тренажеры", 4483362458)
-local KingTab = Window:CreateTab("Царь Горы", 4483362458)
-local PetsTab = Window:CreateTab("Питомцы", 4483362458)
-local QuestTab = Window:CreateTab("Квесты & Рулетка", 4483362458)
-local TeleportTab = Window:CreateTab("Телепорты", 4483362458)
-local PlayerTab = Window:CreateTab("Игрок", 4483362458)
-local PerfTab = Window:CreateTab("Оптимизация", 4483362458)
+local FarmTab = Window:MakeTab({Name = "Авто-Фарм", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+local MachineTab = Window:MakeTab({Name = "Тренажеры", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+local KingTab = Window:MakeTab({Name = "Царь Горы", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+local PetsTab = Window:MakeTab({Name = "Питомцы", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+local QuestTab = Window:MakeTab({Name = "Квесты & Рулетка", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+local TeleportTab = Window:MakeTab({Name = "Телепорты", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+local PlayerTab = Window:MakeTab({Name = "Игрок", Icon = "rbxassetid://4483345998", PremiumOnly = false})
+local PerfTab = Window:MakeTab({Name = "Оптимизация", Icon = "rbxassetid://4483345998", PremiumOnly = false})
 
 -- ==================== ВКЛАДКА: АВТО-ФАРМ ====================
-FarmTab:CreateSection("Турбо-Фарм (Спам пакетами без анимации)")
+FarmTab:AddSection({Name = "Турбо-Фарм (Спам пакетами)"})
 
-FarmTab:CreateSlider({
-    Name = "Скорость Турбо-фарма (Пакетов/сек)",
-    Range = {10, 200},
-    Increment = 10,
-    Suffix = "Reps",
-    CurrentValue = 50,
-    Flag = "Slider_Turbo",
-    Callback = function(Value) Settings.TurboSpeed = Value end,
+FarmTab:AddSlider({
+    Name = "Скорость Турбо-фарма", Min = 10, Max = 200, Default = 50, Color = Color3.fromRGB(255,255,255), Increment = 10, ValueName = "Reps/sec",
+    Callback = function(Value) Settings.TurboSpeed = Value end    
 })
 
-FarmTab:CreateToggle({
-    Name = "Турбо Тренировка (Возьми снаряд в руки)",
-    CurrentValue = false,
-    Flag = "Toggle_Reps_Turbo",
+FarmTab:AddToggle({
+    Name = "Турбо Тренировка (Возьми снаряд)", Default = false,
     Callback = function(Value)
         Settings.TurboReps = Value
         if Value then
             task.spawn(function()
                 while Settings.TurboReps do
-                    -- Качает всё: гантели, отжимания, пресс
                     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildWhichIsA("Tool") then
                         for i = 1, math.clamp(Settings.TurboSpeed / 10, 1, 20) do
                             pcall(function() ReplicatedStorage.rEvents.muscleEvent:FireServer("rep") end)
@@ -175,13 +141,11 @@ FarmTab:CreateToggle({
                 end
             end)
         end
-    end,
+    end    
 })
 
-FarmTab:CreateToggle({
-    Name = "Турбо Удары (Punch)",
-    CurrentValue = false,
-    Flag = "Toggle_Punch_Turbo",
+FarmTab:AddToggle({
+    Name = "Турбо Удары (Punch)", Default = false,
     Callback = function(Value)
         Settings.TurboPunch = Value
         if Value then
@@ -197,15 +161,12 @@ FarmTab:CreateToggle({
                 end
             end)
         end
-    end,
+    end    
 })
 
-FarmTab:CreateSection("Перерождение")
-
-FarmTab:CreateToggle({
-    Name = "Авто-Ребертх",
-    CurrentValue = false,
-    Flag = "Toggle_Rebirth",
+FarmTab:AddSection({Name = "Перерождение"})
+FarmTab:AddToggle({
+    Name = "Авто-Ребертх", Default = false,
     Callback = function(Value)
         Settings.Rebirth = Value
         if Value then
@@ -216,21 +177,19 @@ FarmTab:CreateToggle({
                 end
             end)
         end
-    end,
+    end    
 })
 
 -- ==================== ВКЛАДКА: УМНЫЕ ТРЕНАЖЕРЫ ====================
-MachineTab:CreateSection("Отвязка от тренажера (Бегай и качайся)")
+MachineTab:AddSection({Name = "Отвязка от тренажера (Бегай и качайся)"})
 
-MachineTab:CreateDropdown({
-    Name = "Выбрать тренажер", Options = MachinesList, CurrentOption = {"Bench Press"}, MultipleOptions = false,
-    Flag = "Dropdown_Machine", Callback = function(Option) Settings.SelectedMachine = Option[1] end,
+MachineTab:AddDropdown({
+    Name = "Выбрать тренажер", Default = "Bench Press", Options = MachinesList,
+    Callback = function(Value) Settings.SelectedMachine = Value end    
 })
 
-MachineTab:CreateToggle({
-    Name = "Включить Умный Тренажер",
-    CurrentValue = false,
-    Flag = "Toggle_SmartMachine",
+MachineTab:AddToggle({
+    Name = "Включить Умный Тренажер", Default = false,
     Callback = function(Value)
         Settings.SmartMachine = Value
         if Value then
@@ -254,16 +213,14 @@ MachineTab:CreateToggle({
                 end
             end)
         end
-    end,
+    end    
 })
 
 -- ==================== ВКЛАДКА: ЦАРЬ ГОРЫ ====================
-KingTab:CreateSection("Скрытый захват из под текстур")
+KingTab:AddSection({Name = "Скрытый захват из под текстур"})
 
-KingTab:CreateToggle({
-    Name = "Включить захват King Gym",
-    CurrentValue = false,
-    Flag = "Toggle_KingLock",
+KingTab:AddToggle({
+    Name = "Включить захват King Gym", Default = false,
     Callback = function(Value)
         Settings.KingLock = Value
         if Value then
@@ -283,19 +240,19 @@ KingTab:CreateToggle({
                 end
             end)
         end
-    end,
+    end    
 })
 
 -- ==================== ВКЛАДКА: ПИТОМЦЫ ====================
-PetsTab:CreateSection("Открытие и Прокачка")
+PetsTab:AddSection({Name = "Открытие и Прокачка"})
 
-PetsTab:CreateDropdown({
-    Name = "Выбрать кристалл", Options = Crystals, CurrentOption = {"Blue Crystal"}, MultipleOptions = false,
-    Flag = "Dropdown_Crystals", Callback = function(Option) Settings.SelectedEgg = Option[1] end,
+PetsTab:AddDropdown({
+    Name = "Выбрать кристалл", Default = "Blue Crystal", Options = Crystals,
+    Callback = function(Value) Settings.SelectedEgg = Value end    
 })
 
-PetsTab:CreateToggle({
-    Name = "Авто-открытие кристалла", CurrentValue = false, Flag = "Toggle_Crystal",
+PetsTab:AddToggle({
+    Name = "Авто-открытие кристалла", Default = false,
     Callback = function(Value)
         Settings.AutoEgg = Value
         task.spawn(function()
@@ -304,11 +261,11 @@ PetsTab:CreateToggle({
                 task.wait(0.5)
             end
         end)
-    end,
+    end    
 })
 
-PetsTab:CreateToggle({
-    Name = "Авто-Эволюция питомцев", CurrentValue = false, Flag = "Toggle_Evolve",
+PetsTab:AddToggle({
+    Name = "Авто-Эволюция питомцев", Default = false,
     Callback = function(Value)
         Settings.AutoEvolve = Value
         task.spawn(function()
@@ -324,14 +281,14 @@ PetsTab:CreateToggle({
                 task.wait(5)
             end
         end)
-    end,
+    end    
 })
 
 -- ==================== ВКЛАДКА: КВЕСТЫ & РУЛЕТКА ====================
-QuestTab:CreateSection("Автоматизация событий")
+QuestTab:AddSection({Name = "Автоматизация событий"})
 
-QuestTab:CreateToggle({
-    Name = "Авто-Сбор Квестов", CurrentValue = false, Flag = "Toggle_Quests",
+QuestTab:AddToggle({
+    Name = "Авто-Сбор Квестов", Default = false,
     Callback = function(Value)
         Settings.AutoQuest = Value
         task.spawn(function()
@@ -346,11 +303,11 @@ QuestTab:CreateToggle({
                 task.wait(3)
             end
         end)
-    end,
+    end    
 })
 
-QuestTab:CreateToggle({
-    Name = "Авто-Колесо Фортуны", CurrentValue = false, Flag = "Toggle_Wheel",
+QuestTab:AddToggle({
+    Name = "Авто-Колесо Фортуны", Default = false,
     Callback = function(Value)
         Settings.AutoWheel = Value
         task.spawn(function()
@@ -362,29 +319,29 @@ QuestTab:CreateToggle({
                 task.wait(5)
             end
         end)
-    end,
+    end    
 })
 
 -- ==================== ВКЛАДКА: ТЕЛЕПОРТЫ ====================
-TeleportTab:CreateSection("Быстрое перемещение")
+TeleportTab:AddSection({Name = "Быстрое перемещение"})
 
 for name, coords in pairs(Teleports) do
-    TeleportTab:CreateButton({
+    TeleportTab:AddButton({
         Name = name,
         Callback = function()
             local char = LocalPlayer.Character
             if char and char:FindFirstChild("HumanoidRootPart") then
                 char.HumanoidRootPart.CFrame = CFrame.new(coords)
             end
-        end,
+        end    
     })
 end
 
 -- ==================== ВКЛАДКА: ИГРОК ====================
-PlayerTab:CreateSection("Модификации персонажа")
+PlayerTab:AddSection({Name = "Модификации персонажа"})
 
-PlayerTab:CreateSlider({
-    Name = "Скорость бега", Range = {16, 250}, Increment = 1, CurrentValue = 16, Flag = "Slider_Speed",
+PlayerTab:AddSlider({
+    Name = "Скорость бега", Min = 16, Max = 250, Default = 16, Color = Color3.fromRGB(255,255,255), Increment = 1, ValueName = "Speed",
     Callback = function(Value)
         Settings.WalkSpeed = Value
         task.spawn(function()
@@ -392,21 +349,21 @@ PlayerTab:CreateSlider({
                 pcall(function() LocalPlayer.Character.Humanoid.WalkSpeed = Settings.WalkSpeed end)
             end
         end)
-    end,
+    end    
 })
 
-PlayerTab:CreateSlider({
-    Name = "Размер персонажа", Range = {1, 10}, Increment = 1, CurrentValue = 1, Flag = "Slider_Size",
+PlayerTab:AddSlider({
+    Name = "Размер персонажа", Min = 1, Max = 10, Default = 1, Color = Color3.fromRGB(255,255,255), Increment = 1, ValueName = "Size",
     Callback = function(Value)
         pcall(function() ReplicatedStorage.rEvents.changeSpeedSizeRemote:InvokeServer("changeSize", Value) end)
-    end,
+    end    
 })
 
 -- ==================== ВКЛАДКА: ОПТИМИЗАЦИЯ ====================
-PerfTab:CreateSection("Режимы для AFK фарма")
+PerfTab:AddSection({Name = "Режимы для AFK фарма"})
 
-PerfTab:CreateButton({
-    Name = "Включить Ultra Black (Снизить нагрузку до 0%)",
+PerfTab:AddButton({
+    Name = "Включить Ultra Black (Снизить нагрузку)",
     Callback = function()
         local sg = Instance.new("ScreenGui", game.CoreGui)
         sg.Name = "UltraBlackScreen_Onyx"
@@ -420,17 +377,15 @@ PerfTab:CreateButton({
         btn.Size = UDim2.new(0, 200, 0, 50)
         btn.Position = UDim2.new(0.5, -100, 0.5, -25)
         btn.Text = "ВЕРНУТЬ ИГРУ"
-        btn.TextScaled = true
         
-        -- Отключаем рендер мира
         RunService:Set3dRenderingEnabled(false)
         
         btn.MouseButton1Click:Connect(function()
             RunService:Set3dRenderingEnabled(true)
             sg:Destroy()
         end)
-    end,
+    end    
 })
 
--- Загрузка сохраненных настроек Rayfield
-Rayfield:LoadConfiguration()
+-- ==================== ИНИЦИАЛИЗАЦИЯ ОРИОНА ====================
+OrionLib:Init()
